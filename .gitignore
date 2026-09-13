@@ -1,0 +1,99 @@
+# =============================================================================
+# ConvoInsight Platform - .gitignore
+# =============================================================================
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.venv
+venv/
+env/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+
+# Docker (keep Dockerfile and docker-compose.yml in git)
+.docker/
+
+# Redis / Postgres data
+pg_data/
+redis_data/
+
+# Node.js
+node_modules/
+.next/
+out/
+
+# Audio
+*.wav
+*.mp3
+*.ogg
+*.flac
+*.m4a
+*.aac
+*.opus
+*.webm
+*.aiff
+*.alac
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Testing & Coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+coverage.xml
+.tox/
+
+# Type Checking
+.mypy_cache/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Model & Data files (too large for git)
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.joblib
+*.dill
+*_bertopic_model*
+*_transformer_model*
+
+# Project Specific
+local_folder
+local_folder/
+prototype/
+logs/
+auto_commit.py
+.collection_info/
+.checkpoints/
+.agents/
+knowledge_base/
+
+# Task Runners
+celerybeat-schedule
+celerybeat.pid

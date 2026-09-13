@@ -1,0 +1,94 @@
+# ==============================================================================
+# Aparsoft AI Chatbot — Local Development Infrastructure
+# ==============================================================================
+#
+# This compose file runs ONLY the infrastructure services.
+# Django, Celery, and Next.js run LOCALLY for proper hot-reload, pdb, and
+# stack traces. This is the standard Django developer workflow.
+#
+# Usage:
+#   docker compose up -d                  # Start Postgres + Redis
+#   docker compose up -d db redis         # Same thing, explicit
+#   docker compose down                   # Stop
+#   docker compose down -v                # Stop + wipe volumes (fresh start)
+#   docker compose logs -f db             # Follow Postgres logs
+#
+# Then in separate terminals:
+#   Terminal 1 (backend):
+#     cd backend && source venv/bin/activate
+#     python manage.py runserver
+#
+#   Terminal 2 (celery worker):
+#     cd backend && source venv/bin/activate
+#     celery -A config worker --loglevel=info
+#
+#   Terminal 3 (celery beat):
+#     cd backend && source venv/bin/activate
+#     celery -A config beat --loglevel=info
+#
+#   Terminal 4 (frontend):
+#     cd frontend && npm run dev
+#
+# Ports (host:container):
+#   PostgreSQL + pgvector : 5434:5432
+#   Redis                 : 6381:6379
+#
+# Databases created automatically by docker/init-db.sh:
+#   chatbot_db          → Django ORM models
+#   langchain_pgvector  → pgvector embeddings for RAG
+#   langchain_history   → LangGraph checkpoints
+# ==============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 17 + pgvector
+  # ---------------------------------------------------------------------------
+  # Single Postgres instance with pgvector extension pre-installed.
+  # Three databases are created automatically on first startup.
+  # ---------------------------------------------------------------------------
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: chatbot-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    environment:
+      POSTGRES_DB: chatbot_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_pass
+      PGVECTOR_DB: langchain_pgvector
+      HISTORY_DB: langchain_history
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Redis 7
+  # ---------------------------------------------------------------------------
+  # Serves three purposes (separated by Redis DB number):
+  #   DB 0 — Django cache + Channels layer
+  #   DB 1 — Celery broker
+  #   DB 2 — Celery result backend
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: chatbot-redis
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
